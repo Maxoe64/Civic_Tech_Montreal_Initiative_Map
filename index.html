@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cartographie des initiatives en technologie civique à Montréal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+  <style>
+    :root {
+      --bg: #f5f3ef;
+      --panel: #fffdf9;
+      --text: #1d2431;
+      --muted: #576074;
+      --border: #ddd4c6;
+      --accent: #244f86;
+      --active: #3d8d59;
+      --dormant: #bd7f2f;
+      --completed: #636c80;
+      --shadow: 0 8px 24px rgba(20, 25, 35, 0.12);
+      --lab: #355c7d;
+      --npo: #5d7c4f;
+      --collective: #a83f5a;
+      --government: #1c6a8c;
+      --project: #7a5f9f;
+      --event: #b9693f;
+      --platform: #27826f;
+    }
+
+    body.dark {
+      --bg: #181b22;
+      --panel: #232833;
+      --text: #ebedf2;
+      --muted: #bac2d1;
+      --border: #3a4253;
+      --accent: #78a9ff;
+      --shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "DM Sans", system-ui, -apple-system, Segoe UI, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .app {
+      display: grid;
+      grid-template-columns: 360px 1fr;
+      height: 100vh;
+    }
+
+    aside {
+      background: var(--panel);
+      border-right: 1px solid var(--border);
+      padding: 1rem;
+      overflow-y: auto;
+      box-shadow: var(--shadow);
+      z-index: 1200;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 1.24rem;
+      line-height: 1.2;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      margin-top: 0.35rem;
+      margin-bottom: 0.8rem;
+      font-size: 0.92rem;
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45rem;
+      margin: 0.5rem 0 0.8rem;
+    }
+
+    button, .chip {
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: transparent;
+      padding: 0.34rem 0.74rem;
+      cursor: pointer;
+      color: var(--text);
+      font: inherit;
+      font-size: 0.84rem;
+    }
+
+    button:hover { border-color: var(--accent); }
+
+    #search {
+      width: 100%;
+      padding: 0.6rem 0.72rem;
+      border-radius: 9px;
+      border: 1px solid var(--border);
+      margin: 0.3rem 0 0.9rem;
+      font: inherit;
+      color: var(--text);
+      background: transparent;
+    }
+
+    .section-title {
+      font-size: 0.84rem;
+      color: var(--muted);
+      margin: 0.8rem 0 0.35rem;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    .check-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.35rem;
+    }
+
+    label.check {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.86rem;
+      padding: 0.2rem 0;
+    }
+
+    .status-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 0.2rem;
+    }
+
+    .visible-count {
+      margin-top: 0.75rem;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .legend {
+      margin-top: 0.9rem;
+      border-top: 1px solid var(--border);
+      padding-top: 0.7rem;
+    }
+
+    .legend-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin: 0.3rem 0;
+      font-size: 0.86rem;
+    }
+
+    .legend-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      border: 2px solid rgba(255,255,255,0.85);
+    }
+
+    #map, #listView {
+      width: 100%;
+      height: 100%;
+    }
+
+    #listView {
+      display: none;
+      overflow: auto;
+      padding: 1rem;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    th, td {
+      border-bottom: 1px solid var(--border);
+      text-align: left;
+      padding: 0.6rem;
+      vertical-align: top;
+    }
+
+    .tag-pill {
+      display: inline-block;
+      background: rgba(36, 79, 134, 0.12);
+      color: var(--accent);
+      padding: 0.1rem 0.45rem;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      margin: 0.05rem;
+    }
+
+    .popup-card h3 {
+      margin: 0 0 0.25rem;
+      font-size: 1.02rem;
+    }
+
+    .badge {
+      display: inline-block;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      border-radius: 999px;
+      padding: 0.18rem 0.48rem;
+      color: #fff;
+      margin-right: 0.2rem;
+    }
+
+    .leaflet-tooltip {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: "DM Sans", sans-serif;
+      font-size: 0.8rem;
+      box-shadow: var(--shadow);
+    }
+
+    .marker {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      border: 2px solid rgba(255, 255, 255, 0.92);
+      display: grid;
+      place-items: center;
+      color: #fff;
+      font-size: 0.68rem;
+      font-weight: 700;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.25);
+    }
+
+    .footer-note {
+      margin-top: 0.9rem;
+      padding-top: 0.75rem;
+      border-top: 1px solid var(--border);
+      font-size: 0.76rem;
+      color: var(--muted);
+    }
+
+    .bar-wrap {
+      margin-top: 0.6rem;
+      display: grid;
+      gap: 0.35rem;
+    }
+
+    .bar-line {
+      display: grid;
+      grid-template-columns: 80px 1fr 28px;
+      align-items: center;
+      gap: 0.35rem;
+      font-size: 0.78rem;
+    }
+
+    .bar {
+      height: 10px;
+      border-radius: 999px;
+      background: rgba(36,79,134,0.12);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .bar > span {
+      position: absolute;
+      left: 0;
+      top: 0;
+      height: 100%;
+      background: var(--accent);
+    }
+
+    .add-form {
+      margin-top: 0.8rem;
+      border-top: 1px solid var(--border);
+      padding-top: 0.6rem;
+    }
+
+    .add-form input, .add-form textarea, .add-form select {
+      width: 100%;
+      margin: 0.24rem 0;
+      padding: 0.4rem;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font: inherit;
+      color: var(--text);
+      background: transparent;
+      font-size: 0.82rem;
+    }
+
+    .snippet {
+      white-space: pre-wrap;
+      background: rgba(36,79,134,0.07);
+      border: 1px solid var(--border);
+      padding: 0.45rem;
+      border-radius: 7px;
+      font-size: 0.76rem;
+      margin-top: 0.4rem;
+    }
+
+    .mobile-toggle {
+      display: none;
+      position: absolute;
+      left: 0.7rem;
+      top: 0.7rem;
+      z-index: 1300;
+      background: var(--panel);
+    }
+
+    @media (max-width: 920px) {
+      .app { grid-template-columns: 1fr; }
+      aside {
+        position: absolute;
+        width: min(92vw, 360px);
+        height: 100vh;
+        transform: translateX(-105%);
+        transition: transform 0.2s ease;
+      }
+      aside.open { transform: translateX(0); }
+      .mobile-toggle { display: inline-block; }
+    }
+  </style>
+</head>
+<body>
+  <button class="mobile-toggle" id="mobileToggle">☰ Filtres</button>
+  <div class="app">
+    <aside id="sidebar">
+      <h1 id="titleFr">Cartographie des initiatives en technologie civique à Montréal</h1>
+      <div class="subtitle" id="subtitle">Mapping Civic Tech Initiatives in Montréal</div>
+
+      <div class="toolbar">
+        <button id="langToggle">EN</button>
+        <button id="viewToggle">Liste</button>
+        <button id="themeToggle">🌙</button>
+      </div>
+
+      <input id="search" placeholder="Rechercher une initiative..." />
+
+      <div class="section-title" data-i18n="types">Types</div>
+      <div class="check-grid" id="typeFilters"></div>
+
+      <div class="section-title" data-i18n="tags">Tags</div>
+      <div class="check-grid" id="tagFilters"></div>
+
+      <div class="section-title" data-i18n="status">Statut</div>
+      <div class="check-grid" id="statusFilters"></div>
+
+      <div class="visible-count" id="visibleCount">0 / 0 initiatives affichées</div>
+
+      <div class="legend">
+        <div class="section-title" data-i18n="legend">Légende</div>
+        <div id="legendRows"></div>
+      </div>
+
+      <div class="section-title" data-i18n="viz">Répartition par type</div>
+      <div class="bar-wrap" id="typeBars"></div>
+
+      <div class="add-form">
+        <div class="section-title" data-i18n="add">Ajouter une initiative (snippet JSON)</div>
+        <input id="addName" placeholder="Nom" />
+        <input id="addNameEn" placeholder="Name (EN)" />
+        <select id="addType"></select>
+        <input id="addLat" placeholder="Latitude" />
+        <input id="addLng" placeholder="Longitude" />
+        <input id="addUrl" placeholder="URL" />
+        <textarea id="addDescFr" placeholder="Description FR"></textarea>
+        <textarea id="addDescEn" placeholder="Description EN"></textarea>
+        <button id="generateSnippet">Générer</button>
+        <div id="snippet" class="snippet"></div>
+      </div>
+
+      <div class="footer-note" id="footerNote">
+        Données recueillies à des fins de recherche. Contribuez :
+        <a href="https://github.com/" target="_blank" rel="noopener">GitHub</a>
+      </div>
+    </aside>
+    <main id="map"></main>
+    <section id="listView"></section>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+  <script>
+    const typeConfig = {
+      lab: { color: "var(--lab)", labelFr: "Laboratoire", labelEn: "Lab", letter: "L" },
+      npo: { color: "var(--npo)", labelFr: "OBNL", labelEn: "NPO", letter: "N" },
+      collective: { color: "var(--collective)", labelFr: "Collectif", labelEn: "Collective", letter: "C" },
+      government: { color: "var(--government)", labelFr: "Gouvernement", labelEn: "Government", letter: "G" },
+      project: { color: "var(--project)", labelFr: "Projet", labelEn: "Project", letter: "P" },
+      event: { color: "var(--event)", labelFr: "Événement", labelEn: "Event", letter: "E" },
+      platform: { color: "var(--platform)", labelFr: "Plateforme", labelEn: "Platform", letter: "T" }
+    };
+
+    const statusLabels = {
+      active: { fr: "Actif", en: "Active" },
+      dormant: { fr: "En veille", en: "Dormant" },
+      completed: { fr: "Terminé", en: "Completed" }
+    };
+
+    const statusColors = { active: "var(--active)", dormant: "var(--dormant)", completed: "var(--completed)" };
+
+    // Data maintained in a single array for easy curation by researchers.
+    const initiatives = [
+      { name: "Nord Ouvert", name_en: "OpenNorth", type: "npo", description_fr: "Organisme montréalais qui développe des standards de données ouvertes et des outils de gouvernance urbaine.", description_en: "Montreal nonprofit advancing open data standards and urban governance tools.", lat: 45.5136, lng: -73.5564, url: "https://opennorth.ca/", tags: ["open-data", "democracy", "open-source"], status: "active" },
+      { name: "Cité-ID LivingLab", name_en: "Cité-ID LivingLab", type: "lab", description_fr: "Living lab de Concordia sur l'engagement citoyen, l'innovation sociale et les villes intelligentes.", description_en: "Concordia living lab focused on citizen engagement, social innovation, and smart city transitions.", lat: 45.4971, lng: -73.5788, url: "https://www.concordia.ca/", tags: ["participation", "democracy", "open-data"], status: "active", locationApproximate: true },
+      { name: "LIUM", name_en: "Montreal Urban Innovation Lab (LIUM)", type: "government", description_fr: "Laboratoire d'innovation urbaine de la Ville de Montréal, orienté vers l'expérimentation publique.", description_en: "City of Montreal urban innovation lab supporting public experimentation and service design.", lat: 45.5037, lng: -73.5692, url: "https://montreal.ca/", tags: ["participation", "open-data", "environment"], status: "active" },
+      { name: "Montréal en commun", name_en: "Montreal in Common", type: "project", description_fr: "Projet de transition socioécologique mobilisant des données et la participation citoyenne.", description_en: "Urban transition project using data and citizen participation for social and ecological change.", lat: 45.5214, lng: -73.5961, url: "https://montrealencommun.org/", tags: ["participation", "environment", "housing"], status: "active" },
+      { name: "Hackons la Corrup!", name_en: "Let's Hack Corruption!", type: "collective", description_fr: "Collectif qui utilise les données ouvertes et l'analyse citoyenne pour lutter contre la corruption.", description_en: "Collective using open data and civic analysis to fight corruption.", lat: 45.5149, lng: -73.5717, url: "https://hackonslacorruption.wordpress.com/", tags: ["open-data", "democracy", "open-source"], status: "dormant", locationApproximate: true },
+      { name: "Québec Ouvert", name_en: "Open Quebec", type: "npo", description_fr: "Organisme de plaidoyer pour l'ouverture des données gouvernementales et la transparence.", description_en: "Advocacy nonprofit for open government data and transparency in Quebec.", lat: 46.8139, lng: -71.2082, url: "https://quebecouvert.org/", tags: ["open-data", "democracy"], status: "active" },
+      { name: "FACIL", name_en: "FACIL", type: "npo", description_fr: "Association qui promeut le logiciel libre dans la sphère publique et communautaire.", description_en: "Quebec nonprofit promoting free/libre software for public-interest uses.", lat: 45.5234, lng: -73.5906, url: "https://www.facil.qc.ca/", tags: ["open-source", "democracy"], status: "active", locationApproximate: true },
+      { name: "Lab Démocratie ouverte", name_en: "Open Democracy Lab", type: "lab", description_fr: "Laboratoire universitaire (ULaval) sur la démocratie ouverte et la participation numérique.", description_en: "Université Laval lab researching open democracy and digital participation.", lat: 46.7817, lng: -71.2735, url: "https://www.fss.ulaval.ca/", tags: ["democracy", "participation"], status: "active" },
+      { name: "Je vois Montréal", name_en: "I See Montreal", type: "platform", description_fr: "Plateforme citoyenne de propositions et d'idées pour Montréal.", description_en: "Civic platform for citizen ideas and proposals in Montreal.", lat: 45.5087, lng: -73.554, url: "https://jevoismontreal.com/", tags: ["participation", "democracy"], status: "completed", locationApproximate: true },
+      { name: "Budget participatif de Montréal", name_en: "Montreal Participatory Budget", type: "government", description_fr: "Programme municipal de budget participatif pour co-concevoir des projets locaux.", description_en: "City participatory budgeting program for co-designing local projects.", lat: 45.5036, lng: -73.5693, url: "https://montreal.ca/", tags: ["participation", "democracy", "housing", "transport", "environment"], status: "active" },
+      { name: "Communautique", name_en: "Communautique", type: "npo", description_fr: "OBNL favorisant l'inclusion numérique, la littératie et l'innovation citoyenne.", description_en: "Nonprofit supporting digital inclusion, literacy, and citizen innovation.", lat: 45.4946, lng: -73.5778, url: "https://www.communautique.quebec/", tags: ["open-source", "health", "food"], status: "active" },
+      { name: "Maison de l'innovation sociale", name_en: "Maison de l'innovation sociale", type: "npo", description_fr: "Carrefour montréalais de l'innovation sociale et des collaborations intersectorielles.", description_en: "Montreal hub for social innovation and cross-sector collaboration.", lat: 45.5318, lng: -73.5567, url: "https://www.mis.quebec/", tags: ["participation", "environment", "housing"], status: "active" },
+      { name: "Espace OBNL", name_en: "Espace OBNL", type: "npo", description_fr: "Plateforme et accompagnement pour le renforcement numérique des OBNL.", description_en: "Support platform helping nonprofits strengthen digital capacity.", lat: 45.501, lng: -73.5713, url: "https://espaceobnl.ca/", tags: ["open-source", "participation"], status: "active", locationApproximate: true },
+      { name: "Projet Montréal", name_en: "Projet Montreal", type: "project", description_fr: "Parti municipal utilisant des outils numériques de mobilisation et de consultation.", description_en: "Municipal political organization using digital engagement and consultation tools.", lat: 45.521, lng: -73.5908, url: "https://projetmontreal.org/", tags: ["democracy", "participation"], status: "active", locationApproximate: true },
+      { name: "OpenFisca Canada", name_en: "OpenFisca Canada", type: "platform", description_fr: "Plateforme libre de microsimulation des taxes et transferts pour la recherche et les politiques publiques.", description_en: "Open-source tax and benefit microsimulation platform for policy analysis.", lat: 45.5088, lng: -73.5878, url: "https://openfisca.org/", tags: ["open-source", "open-data", "democracy"], status: "active", locationApproximate: true },
+      { name: "CIRAIG", name_en: "CIRAIG", type: "lab", description_fr: "Centre de recherche de Polytechnique Montréal en ACV et outils de durabilité ouverts.", description_en: "Polytechnique research group on LCA and sustainability-related open tools.", lat: 45.5048, lng: -73.6132, url: "https://www.ciraig.org/", tags: ["environment", "open-data"], status: "active" },
+      { name: "Laboratoire de cyberjustice", name_en: "Cyberjustice Laboratory", type: "lab", description_fr: "Laboratoire de l'Université de Montréal sur les technologies pour l'accès à la justice.", description_en: "UdeM lab focused on technology for access to justice.", lat: 45.5047, lng: -73.6137, url: "https://cyberjustice.ca/", tags: ["ai", "democracy", "open-source"], status: "active" },
+      { name: "CÉRIUM", name_en: "CÉRIUM", type: "lab", description_fr: "Centre de recherche en études internationales avec travaux sur la gouvernance numérique.", description_en: "International studies center with digital governance and policy tracks.", lat: 45.5046, lng: -73.6142, url: "https://cerium.umontreal.ca/", tags: ["democracy", "ai"], status: "active" },
+      { name: "CIRANO", name_en: "CIRANO", type: "lab", description_fr: "Centre interuniversitaire de recherche appliquée en économie numérique et politiques publiques.", description_en: "Applied research center on digital economy and public policy.", lat: 45.5029, lng: -73.5724, url: "https://cirano.qc.ca/", tags: ["open-data", "ai", "transport"], status: "active" },
+      { name: "MTL connecte / Printemps numérique", name_en: "MTL connecte / Printemps numérique", type: "event", description_fr: "Événement majeur de l'écosystème numérique montréalais et des transitions civiques.", description_en: "Major digital innovation event connecting Montreal civic and public-interest tech ecosystems.", lat: 45.5109, lng: -73.5542, url: "https://mtlconnecte.ca/", tags: ["ai", "open-data", "participation"], status: "active" },
+      { name: "Data for Good Montréal", name_en: "Data for Good Montreal", type: "collective", description_fr: "Communauté de bénévoles en science des données appliquée au bien commun.", description_en: "Volunteer data science community for public-interest projects.", lat: 45.5154, lng: -73.5637, url: "https://www.dataforgood.ca/", tags: ["open-data", "ai", "health"], status: "active", locationApproximate: true }
+    ];
+
+    const i18n = {
+      fr: {
+        search: "Rechercher une initiative...",
+        types: "Types",
+        tags: "Tags",
+        status: "Statut",
+        legend: "Légende",
+        viz: "Répartition par type",
+        add: "Ajouter une initiative (snippet JSON)",
+        list: "Liste",
+        map: "Carte",
+        shown: (v, t) => `${v} / ${t} initiatives affichées`,
+        contrib: "Données recueillies à des fins de recherche. Contribuez"
+      },
+      en: {
+        search: "Search initiatives...",
+        types: "Types",
+        tags: "Tags",
+        status: "Status",
+        legend: "Legend",
+        viz: "Count by type",
+        add: "Add initiative (JSON snippet)",
+        list: "List",
+        map: "Map",
+        shown: (v, t) => `${v} / ${t} initiatives shown`,
+        contrib: "Research dataset. Contribute"
+      }
+    };
+
+    let lang = "fr";
+    let listMode = false;
+
+    const map = L.map("map").setView([45.5017, -73.5673], 12);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 19,
+      attribution: "&copy; OpenStreetMap contributors"
+    }).addTo(map);
+
+    const cluster = L.markerClusterGroup({
+      disableClusteringAtZoom: 15,
+      showCoverageOnHover: false,
+      spiderfyOnMaxZoom: true
+    });
+
+    const activeFilters = { types: new Set(Object.keys(typeConfig)), tags: new Set(), status: new Set(Object.keys(statusLabels)) };
+    let markers = [];
+
+    const topTags = Object.entries(initiatives.reduce((acc, i) => {
+      i.tags.forEach(t => acc[t] = (acc[t] || 0) + 1);
+      return acc;
+    }, {})).sort((a,b) => b[1]-a[1]).slice(0, 10).map(([k]) => k);
+    topTags.forEach(t => activeFilters.tags.add(t));
+
+    function typeColor(type) {
+      return getComputedStyle(document.documentElement).getPropertyValue(`--${type}`) || "#555";
+    }
+
+    function markerIcon(type) {
+      const color = typeColor(type);
+      const letter = typeConfig[type].letter;
+      return L.divIcon({
+        className: "",
+        html: `<div class="marker" style="background:${color}">${letter}</div>`,
+        iconSize: [26, 26],
+        iconAnchor: [13, 13],
+        popupAnchor: [0, -10]
+      });
+    }
+
+    function buildPopup(i) {
+      const typeLabel = lang === "fr" ? typeConfig[i.type].labelFr : typeConfig[i.type].labelEn;
+      const desc = lang === "fr" ? i.description_fr : i.description_en;
+      const status = statusLabels[i.status][lang];
+      const approx = i.locationApproximate ? `<p style="font-size:.75rem;color:var(--muted);margin:.35rem 0 0;">${lang === "fr" ? "Localisation approximative" : "Approximate location"}</p>` : "";
+      return `
+        <div class="popup-card">
+          <h3>${lang === "fr" ? i.name : i.name_en}</h3>
+          <span class="badge" style="background:${typeColor(i.type)}">${typeLabel}</span>
+          <span class="badge" style="background:${getComputedStyle(document.documentElement).getPropertyValue('--' + i.status)}">${status}</span>
+          <p style="margin:.45rem 0">${desc}</p>
+          <div>${i.tags.map(t => `<span class='tag-pill'>${t}</span>`).join("")}</div>
+          <p style="margin:.5rem 0 0"><a href="${i.url}" target="_blank" rel="noopener">${lang === "fr" ? "Site web" : "Website"}</a></p>
+          ${approx}
+        </div>`;
+    }
+
+    function matches(i) {
+      const q = document.getElementById("search").value.trim().toLowerCase();
+      if (!activeFilters.types.has(i.type) || !activeFilters.status.has(i.status)) return false;
+      if ([...activeFilters.tags].length && !i.tags.some(t => activeFilters.tags.has(t))) return false;
+      if (!q) return true;
+      return [i.name, i.name_en, i.description_fr, i.description_en, ...i.tags].join(" ").toLowerCase().includes(q);
+    }
+
+    function refresh() {
+      cluster.clearLayers();
+      markers = [];
+      const filtered = initiatives.filter(matches);
+
+      filtered.forEach(i => {
+        const m = L.marker([i.lat, i.lng], { icon: markerIcon(i.type) });
+        m.bindTooltip(lang === "fr" ? i.name : i.name_en, { direction: "top", offset: [0, -12] });
+        m.bindPopup(buildPopup(i));
+        markers.push(m);
+        cluster.addLayer(m);
+      });
+
+      map.addLayer(cluster);
+      document.getElementById("visibleCount").textContent = i18n[lang].shown(filtered.length, initiatives.length);
+      renderLegend();
+      renderList(filtered);
+      renderBars(filtered);
+    }
+
+    function renderFilters() {
+      const typeWrap = document.getElementById("typeFilters");
+      const tagWrap = document.getElementById("tagFilters");
+      const statusWrap = document.getElementById("statusFilters");
+      const addType = document.getElementById("addType");
+
+      typeWrap.innerHTML = "";
+      addType.innerHTML = "";
+      Object.keys(typeConfig).forEach(type => {
+        const label = lang === "fr" ? typeConfig[type].labelFr : typeConfig[type].labelEn;
+        const row = document.createElement("label");
+        row.className = "check";
+        row.innerHTML = `<input type='checkbox' checked data-kind='type' data-value='${type}' /> ${label}`;
+        typeWrap.appendChild(row);
+        const option = document.createElement("option");
+        option.value = type;
+        option.textContent = label;
+        addType.appendChild(option);
+      });
+
+      tagWrap.innerHTML = "";
+      topTags.forEach(tag => {
+        const row = document.createElement("label");
+        row.className = "check";
+        row.innerHTML = `<input type='checkbox' checked data-kind='tag' data-value='${tag}' /> ${tag}`;
+        tagWrap.appendChild(row);
+      });
+
+      statusWrap.innerHTML = "";
+      Object.keys(statusLabels).forEach(st => {
+        const row = document.createElement("label");
+        row.className = "check";
+        row.innerHTML = `<input type='checkbox' checked data-kind='status' data-value='${st}' /> <span class='status-dot' style='background:${statusColors[st]}'></span>${statusLabels[st][lang]}`;
+        statusWrap.appendChild(row);
+      });
+
+      document.querySelectorAll("input[data-kind]").forEach(el => {
+        el.addEventListener("change", (e) => {
+          const { kind, value } = e.target.dataset;
+          const set = kind === "type" ? activeFilters.types : kind === "tag" ? activeFilters.tags : activeFilters.status;
+          if (e.target.checked) set.add(value); else set.delete(value);
+          refresh();
+        });
+      });
+    }
+
+    function renderLegend() {
+      const wrap = document.getElementById("legendRows");
+      wrap.innerHTML = "";
+      Object.entries(typeConfig).forEach(([type, c]) => {
+        const row = document.createElement("div");
+        row.className = "legend-row";
+        row.innerHTML = `<span class='legend-dot' style='background:${typeColor(type)}'></span> ${lang === "fr" ? c.labelFr : c.labelEn}`;
+        wrap.appendChild(row);
+      });
+    }
+
+    function renderList(data) {
+      const holder = document.getElementById("listView");
+      holder.innerHTML = `
+        <table>
+          <thead><tr><th>${lang === "fr" ? "Nom" : "Name"}</th><th>${lang === "fr" ? "Type" : "Type"}</th><th>${lang === "fr" ? "Statut" : "Status"}</th><th>Tags</th><th>URL</th></tr></thead>
+          <tbody>
+            ${data.map(i => `<tr>
+              <td>${lang === "fr" ? i.name : i.name_en}${i.locationApproximate ? " <em>(~)</em>" : ""}</td>
+              <td>${lang === "fr" ? typeConfig[i.type].labelFr : typeConfig[i.type].labelEn}</td>
+              <td>${statusLabels[i.status][lang]}</td>
+              <td>${i.tags.map(t => `<span class='tag-pill'>${t}</span>`).join("")}</td>
+              <td><a href='${i.url}' target='_blank' rel='noopener'>↗</a></td>
+            </tr>`).join("")}
+          </tbody>
+        </table>`;
+    }
+
+    function renderBars(data) {
+      const wrap = document.getElementById("typeBars");
+      const counts = data.reduce((acc, i) => (acc[i.type] = (acc[i.type] || 0) + 1, acc), {});
+      const max = Math.max(1, ...Object.values(counts));
+      wrap.innerHTML = Object.keys(typeConfig).map(type => {
+        const c = counts[type] || 0;
+        const p = Math.round((c / max) * 100);
+        return `<div class='bar-line'><span>${lang === "fr" ? typeConfig[type].labelFr : typeConfig[type].labelEn}</span><div class='bar'><span style='width:${p}%'></span></div><strong>${c}</strong></div>`;
+      }).join("");
+    }
+
+    function applyI18n() {
+      document.documentElement.lang = lang;
+      document.getElementById("search").placeholder = i18n[lang].search;
+      document.getElementById("langToggle").textContent = lang === "fr" ? "EN" : "FR";
+      document.getElementById("viewToggle").textContent = listMode ? i18n[lang].map : i18n[lang].list;
+      document.querySelectorAll("[data-i18n]").forEach(n => n.textContent = i18n[lang][n.dataset.i18n]);
+      const footer = document.getElementById("footerNote");
+      footer.childNodes[0].textContent = `${i18n[lang].contrib} : `;
+      renderFilters();
+      refresh();
+    }
+
+    document.getElementById("search").addEventListener("input", refresh);
+    document.getElementById("langToggle").addEventListener("click", () => {
+      lang = lang === "fr" ? "en" : "fr";
+      applyI18n();
+    });
+
+    document.getElementById("viewToggle").addEventListener("click", () => {
+      listMode = !listMode;
+      document.getElementById("map").style.display = listMode ? "none" : "block";
+      document.getElementById("listView").style.display = listMode ? "block" : "none";
+      document.getElementById("viewToggle").textContent = listMode ? i18n[lang].map : i18n[lang].list;
+      if (!listMode) setTimeout(() => map.invalidateSize(), 30);
+    });
+
+    document.getElementById("themeToggle").addEventListener("click", () => {
+      document.body.classList.toggle("dark");
+      refresh();
+    });
+
+    document.getElementById("generateSnippet").addEventListener("click", () => {
+      const snippet = {
+        name: document.getElementById("addName").value,
+        name_en: document.getElementById("addNameEn").value,
+        type: document.getElementById("addType").value,
+        description_fr: document.getElementById("addDescFr").value,
+        description_en: document.getElementById("addDescEn").value,
+        lat: Number(document.getElementById("addLat").value),
+        lng: Number(document.getElementById("addLng").value),
+        url: document.getElementById("addUrl").value,
+        tags: ["open-data"],
+        status: "active"
+      };
+      document.getElementById("snippet").textContent = JSON.stringify(snippet, null, 2);
+    });
+
+    document.getElementById("mobileToggle").addEventListener("click", () => {
+      document.getElementById("sidebar").classList.toggle("open");
+    });
+
+    applyI18n();
+  </script>
+</body>
+</html>
