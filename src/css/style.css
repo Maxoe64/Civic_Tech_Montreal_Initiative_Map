@@ -1,0 +1,245 @@
+/* ── Reset & base ─────────────────────────────────── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --sidebar-width: 320px;
+  --header-height: 56px;
+  --color-bg: #f8fafc;
+  --color-surface: #ffffff;
+  --color-text: #1e293b;
+  --color-muted: #64748b;
+  --color-border: #e2e8f0;
+  --color-primary: #2563eb;
+  --radius: 8px;
+}
+
+html,
+body {
+  height: 100%;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  color: var(--color-text);
+  background: var(--color-bg);
+}
+
+/* ── Header ──────────────────────────────────────── */
+.app-header {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  height: var(--header-height);
+  padding: 0 20px;
+  background: var(--color-primary);
+  color: #fff;
+}
+
+.app-header h1 {
+  font-size: 1.2rem;
+  font-weight: 700;
+  line-height: var(--header-height);
+}
+
+.subtitle {
+  font-size: 0.85rem;
+  opacity: 0.85;
+  line-height: var(--header-height);
+}
+
+/* ── Layout ──────────────────────────────────────── */
+.app-container {
+  display: flex;
+  height: calc(100vh - var(--header-height));
+}
+
+/* ── Sidebar ─────────────────────────────────────── */
+.sidebar {
+  width: var(--sidebar-width);
+  min-width: var(--sidebar-width);
+  background: var(--color-surface);
+  border-right: 1px solid var(--color-border);
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.sidebar h2 {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-muted);
+  margin-bottom: 8px;
+}
+
+/* ── Search ──────────────────────────────────────── */
+.search-box input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  font-size: 0.9rem;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.search-box input:focus {
+  border-color: var(--color-primary);
+}
+
+/* ── Category filters ────────────────────────────── */
+.filter-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  padding: 4px 0;
+  cursor: pointer;
+}
+
+.filter-swatch {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+}
+
+/* ── Stats ────────────────────────────────────────── */
+.stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.stat-card {
+  background: var(--color-bg);
+  border-radius: var(--radius);
+  padding: 10px;
+  text-align: center;
+}
+
+.stat-card .stat-value {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.stat-card .stat-label {
+  font-size: 0.7rem;
+  color: var(--color-muted);
+  text-transform: uppercase;
+}
+
+/* ── Initiative list ─────────────────────────────── */
+#initiative-items {
+  list-style: none;
+}
+
+.initiative-item {
+  padding: 8px 10px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: background 0.15s;
+}
+
+.initiative-item:hover {
+  background: var(--color-bg);
+}
+
+.initiative-item .item-name {
+  font-weight: 600;
+}
+
+.initiative-item .item-meta {
+  font-size: 0.75rem;
+  color: var(--color-muted);
+}
+
+/* ── Map ─────────────────────────────────────────── */
+.map-wrapper {
+  flex: 1;
+  position: relative;
+}
+
+#map {
+  width: 100%;
+  height: 100%;
+}
+
+/* ── Leaflet overrides ───────────────────────────── */
+.custom-marker {
+  background: none;
+  border: none;
+}
+
+.popup-content h3 {
+  margin: 0 0 6px;
+  font-size: 1rem;
+}
+
+.popup-badge {
+  display: inline-block;
+  color: #fff;
+  font-size: 0.7rem;
+  padding: 2px 8px;
+  border-radius: 10px;
+  margin-right: 4px;
+}
+
+.popup-status {
+  display: inline-block;
+  font-size: 0.7rem;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: #e2e8f0;
+  color: #334155;
+}
+
+.popup-status--active {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.popup-status--pilot {
+  background: #fef9c3;
+  color: #854d0e;
+}
+
+.popup-status--planned {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.popup-neighbourhood {
+  font-size: 0.8rem;
+  color: var(--color-muted);
+  margin: 6px 0 4px;
+}
+
+.popup-content a {
+  display: inline-block;
+  margin-top: 6px;
+  color: var(--color-primary);
+  font-size: 0.8rem;
+}
+
+/* ── Responsive ──────────────────────────────────── */
+@media (max-width: 768px) {
+  .app-container {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    width: 100%;
+    min-width: unset;
+    max-height: 40vh;
+    border-right: none;
+    border-bottom: 1px solid var(--color-border);
+  }
+}

@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Civic Tech Montreal — Initiative Map</title>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin=""
+    />
+    <link rel="stylesheet" href="/src/css/style.css" />
+  </head>
+  <body>
+    <header class="app-header">
+      <h1>Civic Tech Montreal</h1>
+      <p class="subtitle">Initiative Map</p>
+    </header>
+
+    <div class="app-container">
+      <aside class="sidebar" id="sidebar">
+        <div class="search-box">
+          <input
+            type="text"
+            id="search-input"
+            placeholder="Search initiatives…"
+            aria-label="Search initiatives"
+          />
+        </div>
+
+        <div class="filter-section">
+          <h2>Categories</h2>
+          <div id="category-filters"></div>
+        </div>
+
+        <div class="stats-section" id="stats">
+          <h2>Overview</h2>
+          <div class="stats-grid"></div>
+        </div>
+
+        <div class="initiative-list" id="initiative-list">
+          <h2>Initiatives</h2>
+          <ul id="initiative-items"></ul>
+        </div>
+      </aside>
+
+      <main class="map-wrapper">
+        <div id="map"></div>
+      </main>
+    </div>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
