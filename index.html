@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Civic Tech Montréal — Cartographie des initiatives</title>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin=""
+    />
+    <link rel="stylesheet" href="/src/css/style.css" />
+  </head>
+  <body>
+    <div class="app-container">
+      <aside class="sidebar" id="sidebar">
+        <!-- Header inside sidebar like the reference -->
+        <div class="sidebar-header">
+          <h1 id="app-title"></h1>
+          <p class="subtitle" id="app-subtitle"></p>
+          <div class="lang-toggle">
+            <button class="lang-btn active" data-lang="fr">FR</button>
+            <button class="lang-btn" data-lang="en">EN</button>
+          </div>
+        </div>
+
+        <div class="search-box">
+          <input
+            type="text"
+            id="search-input"
+            placeholder="Rechercher une initiative…"
+            aria-label="Rechercher une initiative"
+          />
+        </div>
+
+        <div class="filter-section">
+          <h2 id="label-types">TYPES</h2>
+          <div id="type-filters" class="filter-grid"></div>
+        </div>
+
+        <div class="filter-section">
+          <h2 id="label-tags">TAGS</h2>
+          <div id="tag-filters" class="filter-grid"></div>
+        </div>
+
+        <div class="filter-section">
+          <h2 id="label-status">STATUT</h2>
+          <div id="status-filters" class="filter-grid"></div>
+        </div>
+
+        <div class="count-line" id="count-line"></div>
+
+        <div class="filter-section">
+          <h2 id="label-legend">LÉGENDE</h2>
+          <div id="legend"></div>
+        </div>
+
+        <div class="filter-section">
+          <h2 id="label-distribution">RÉPARTITION PAR TYPE</h2>
+          <div id="distribution"></div>
+        </div>
+
+        <div class="filter-section add-form-section">
+          <h2 id="label-add-initiative"></h2>
+          <form id="add-form" autocomplete="off">
+            <input type="text" id="add-nameFr" placeholder="Nom (FR)" required />
+            <input type="text" id="add-nameEn" placeholder="Name (EN)" />
+            <select id="add-type" required></select>
+            <select id="add-status" required></select>
+            <input type="text" id="add-tags" placeholder="open-source, open data, hackathon" />
+            <input type="number" id="add-lat" step="any" placeholder="Latitude" required />
+            <input type="number" id="add-lng" step="any" placeholder="Longitude" required />
+            <input type="url" id="add-url" placeholder="https://..." />
+            <textarea id="add-descFr" placeholder="Description FR" rows="2"></textarea>
+            <textarea id="add-descEn" placeholder="Description EN" rows="2"></textarea>
+            <button type="submit" id="add-btn">Ajouter</button>
+          </form>
+        </div>
+      </aside>
+
+      <main class="map-wrapper">
+        <div id="map"></div>
+      </main>
+    </div>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
